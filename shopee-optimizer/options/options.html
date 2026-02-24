@@ -1,140 +1,133 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Shopee Optimizer 설정</title>
+  <title>Shopee Optimizer - 설정</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0f0f23; color: #e0e0e0; padding: 40px; min-height: 100vh; }
-    .container { max-width: 640px; margin: 0 auto; }
-    h1 { color: #00d4aa; margin-bottom: 8px; font-size: 24px; }
-    .subtitle { color: #888; margin-bottom: 32px; font-size: 14px; }
-    .section { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 20px; border: 1px solid #2a2a4a; }
-    .section h2 { color: #00d4aa; font-size: 16px; margin-bottom: 16px; }
-    label { display: block; font-size: 13px; color: #aaa; margin-bottom: 6px; }
-    input[type="text"], input[type="password"], select {
-      width: 100%; padding: 10px 14px; background: #0f0f23; border: 1px solid #3a3a5a;
-      border-radius: 8px; color: #e0e0e0; font-size: 14px; margin-bottom: 16px;
+    body { background: #0f0f23; color: #e0e0e0; font-family: -apple-system, sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; }
+    h1 { color: #fff; margin-bottom: 24px; }
+    h2 { color: #c0c0d0; margin: 20px 0 12px; font-size: 16px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 13px; color: #aaa; margin-bottom: 4px; }
+    .field input, .field select {
+      width: 100%; padding: 8px 12px; background: #1a1a2e; color: #e0e0e0;
+      border: 1px solid #444; border-radius: 6px; font-size: 14px;
     }
-    input:focus, select:focus { outline: none; border-color: #00d4aa; }
-    .row { display: flex; gap: 12px; }
-    .row > div { flex: 1; }
-    .btn { padding: 10px 24px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
-    .btn-primary { background: #00d4aa; color: #0f0f23; }
-    .btn-primary:hover { background: #00eebb; }
-    .btn-secondary { background: #2a2a4a; color: #e0e0e0; }
-    .btn-test { background: #3a3a5a; color: #00d4aa; margin-left: 8px; }
-    .status { font-size: 12px; margin-top: 8px; padding: 8px; border-radius: 6px; display: none; }
-    .status.success { display: block; background: #0a2a1a; color: #00d4aa; border: 1px solid #00d4aa33; }
-    .status.error { display: block; background: #2a0a0a; color: #ff6b6b; border: 1px solid #ff6b6b33; }
-    .help { font-size: 12px; color: #666; margin-top: -12px; margin-bottom: 16px; }
-    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2a2a4a; }
-    .toggle-row:last-child { border-bottom: none; }
-    .toggle-label { font-size: 14px; }
-    .toggle-desc { font-size: 12px; color: #666; margin-top: 2px; }
+    .switch-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+    .switch-row label { color: #e0e0e0; font-size: 14px; }
     .switch { position: relative; width: 44px; height: 24px; }
     .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; inset: 0; background: #3a3a5a; border-radius: 24px; transition: 0.3s; }
-    .slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #888; border-radius: 50%; transition: 0.3s; }
-    input:checked + .slider { background: #00d4aa; }
-    input:checked + .slider:before { transform: translateX(20px); background: #0f0f23; }
-    .footer-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #444; border-radius: 24px; transition: .3s; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .3s; }
+    .switch input:checked + .slider { background: #7c4dff; }
+    .switch input:checked + .slider:before { transform: translateX(20px); }
+    .actions { display: flex; gap: 12px; margin-top: 24px; }
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .btn-save { background: #7c4dff; color: #fff; }
+    .btn-save:hover { background: #651fff; }
+    .btn-reset { background: #333; color: #e0e0e0; }
+    .btn-reset:hover { background: #444; }
+    .btn-test { background: #2196F3; color: #fff; font-size: 12px; padding: 6px 12px; margin-left: 8px; }
+    #testResult { font-size: 12px; margin-top: 6px; }
+    #testResult.ok { color: #4caf50; }
+    #testResult.fail { color: #f44336; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>⚙️ Shopee Optimizer 설정</h1>
-    <p class="subtitle">AI 기반 상품 최적화 설정을 관리합니다</p>
+  <h1>Shopee Optimizer 설정</h1>
 
-    <div class="section">
-      <h2>🤖 Gemini API 설정</h2>
-      <label>API Key</label>
-      <div style="display:flex; gap:8px;">
-        <input type="password" id="geminiKey" placeholder="AIzaSy... (Google AI Studio에서 발급)">
-        <button class="btn btn-test" id="btnTestKey">테스트</button>
-      </div>
-      <p class="help">무료: <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#00d4aa;">Google AI Studio</a>에서 API Key 발급 (Gemini 2.5 Flash 무료 사용 가능)</p>
-      <div id="keyStatus" class="status"></div>
-
-      <label>AI 모델</label>
-      <select id="geminiModel">
-        <option value="gemini-2.5-flash">Gemini 2.5 Flash (추천 - 무료, 빠름)</option>
-        <option value="gemini-2.0-flash">Gemini 2.0 Flash (무료, 안정적)</option>
-        <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (무료, 가장 저렴)</option>
-        <option value="gemini-2.5-pro">Gemini 2.5 Pro (무료, 최고 품질)</option>
-        <option value="gemini-3-flash">Gemini 3 Flash (최신, 무료)</option>
-      </select>
+  <h2>Gemini API 설정</h2>
+  <div class="field">
+    <label>API Key</label>
+    <div style="display:flex;align-items:center;">
+      <input type="password" id="geminiKey" placeholder="Gemini API 키를 입력하세요" style="flex:1;">
+      <button class="btn btn-test" id="btnTestApi">테스트</button>
     </div>
-
-    <div class="section">
-      <h2>📝 제목 최적화 설정</h2>
-      <div class="row">
-        <div>
-          <label>최대 제목 길이</label>
-          <input type="text" id="maxTitleLength" value="120">
-        </div>
-        <div>
-          <label>키워드 삽입 위치</label>
-          <select id="keywordPosition">
-            <option value="front">앞쪽 (추천)</option>
-            <option value="natural">자연스럽게 배치</option>
-            <option value="back">뒤쪽</option>
-          </select>
-        </div>
-      </div>
-      <label>브랜드명 유지</label>
-      <select id="keepBrand">
-        <option value="always">항상 유지</option>
-        <option value="front">항상 맨 앞에</option>
-        <option value="flexible">AI 판단에 맡김</option>
-      </select>
-    </div>
-
-    <div class="section">
-      <h2>🔄 Freshness Boost 설정</h2>
-      <div class="toggle-row">
-        <div>
-          <div class="toggle-label">자동 Freshness 로테이션</div>
-          <div class="toggle-desc">7일마다 상품 제목을 미세 수정하여 검색 노출 유지</div>
-        </div>
-        <label class="switch"><input type="checkbox" id="autoFreshness" checked><span class="slider"></span></label>
-      </div>
-      <div class="row" style="margin-top:16px;">
-        <div>
-          <label>일일 수정 상품 수</label>
-          <input type="text" id="dailyFreshness" value="7">
-        </div>
-        <div>
-          <label>로테이션 주기 (일)</label>
-          <input type="text" id="freshnessInterval" value="7">
-        </div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>🛡️ 안전 설정</h2>
-      <div class="toggle-row">
-        <div>
-          <div class="toggle-label">수정 전 승인 필요</div>
-          <div class="toggle-desc">AI가 생성한 제목/설명을 적용하기 전에 사용자 확인</div>
-        </div>
-        <label class="switch"><input type="checkbox" id="requireApproval" checked><span class="slider"></span></label>
-      </div>
-      <div class="toggle-row">
-        <div>
-          <div class="toggle-label">수정 전 백업 저장</div>
-          <div class="toggle-desc">원본 제목/설명을 자동 백업</div>
-        </div>
-        <label class="switch"><input type="checkbox" id="autoBackup" checked><span class="slider"></span></label>
-      </div>
-    </div>
-
-    <div class="footer-actions">
-      <button class="btn btn-secondary" id="btnReset">초기화</button>
-      <button class="btn btn-primary" id="btnSave">💾 설정 저장</button>
-    </div>
-    <div id="saveStatus" class="status" style="margin-top:12px;"></div>
+    <div id="testResult"></div>
   </div>
+  <div class="field">
+    <label>모델 선택</label>
+    <select id="geminiModel">
+      <option value="gemini-2.0-flash">Gemini 2.0 Flash (빠름)</option>
+      <option value="gemini-2.5-flash">Gemini 2.5 Flash (최신)</option>
+      <option value="gemini-1.5-pro">Gemini 1.5 Pro (고품질)</option>
+    </select>
+  </div>
+
+  <h2>제목 최적화</h2>
+  <div class="field">
+    <label>최대 제목 길이</label>
+    <input type="number" id="maxTitleLength" min="50" max="200" value="120">
+  </div>
+  <div class="field">
+    <label>키워드 위치</label>
+    <select id="keywordPosition">
+      <option value="front">앞쪽 (권장)</option>
+      <option value="natural">자연스럽게</option>
+      <option value="back">뒤쪽</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>브랜드명 유지</label>
+    <select id="keepBrand">
+      <option value="always">항상 유지</option>
+      <option value="if_space">공간 여유 시</option>
+      <option value="never">제거 가능</option>
+    </select>
+  </div>
+
+  <h2>Freshness Boost</h2>
+  <div class="switch-row">
+    <label>자동 로테이션</label>
+    <div class="switch">
+      <input type="checkbox" id="freshnessRotationEnabled">
+      <span class="slider"></span>
+    </div>
+  </div>
+  <div class="field">
+    <label>일일 수정 상품 수</label>
+    <input type="number" id="productsPerDay" min="1" max="50" value="7">
+  </div>
+  <div class="field">
+    <label>로테이션 간격 (일)</label>
+    <input type="number" id="rotationInterval" min="1" max="30" value="7">
+  </div>
+
+  <h2>안전 설정</h2>
+  <div class="switch-row">
+    <label>수정 전 승인 필요</label>
+    <div class="switch">
+      <input type="checkbox" id="approvalRequired" checked>
+      <span class="slider"></span>
+    </div>
+  </div>
+  <div class="switch-row">
+    <label>자동 백업</label>
+    <div class="switch">
+      <input type="checkbox" id="autoBackup" checked>
+      <span class="slider"></span>
+    </div>
+  </div>
+
+  <h2>자동 분석</h2>
+  <div class="field">
+    <label>자동 분석 간격 (시간)</label>
+    <input type="number" id="autoAnalyzeInterval" min="1" max="168" value="24">
+  </div>
+  <div class="switch-row">
+    <label>알림 활성화</label>
+    <div class="switch">
+      <input type="checkbox" id="notificationsEnabled" checked>
+      <span class="slider"></span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-reset" id="btnReset">초기화</button>
+    <button class="btn btn-save" id="btnSave">저장</button>
+  </div>
+
   <script src="options.js"></script>
 </body>
 </html>

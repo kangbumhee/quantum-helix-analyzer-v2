@@ -2,50 +2,35 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shopee Optimizer</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>🛍️ Shopee Optimizer</h1>
-      <p class="subtitle">샵 분석 & 키워드 최적화</p>
-    </header>
+  <div class="header">
+    <h1>Shopee Optimizer</h1>
+    <p class="subtitle">쇼피 셀러 분석 & AI 최적화</p>
+  </div>
 
-    <!-- 로그인 상태 -->
-    <div id="loginStatus" class="status-bar">
-      <span id="statusIcon">⏳</span>
-      <span id="statusText">확인 중...</span>
-    </div>
-    <button id="btnConnectCookie" class="btn btn-secondary">🍪 쿠키 연결</button>
+  <div id="loginStatus" class="status-bar"></div>
 
-    <!-- 샵 목록 -->
-    <div id="shopList" class="section" style="display:none;">
-      <h2>활성 샵</h2>
-      <div id="shops"></div>
-    </div>
+  <button id="btnConnectCookie" class="btn btn-connect">쿠키로 연결</button>
 
-    <!-- 빠른 분석 -->
-    <div id="actions" class="section" style="display:none;">
-      <button id="btnAnalyzeAll" class="btn btn-primary">🔍 전체 샵 분석</button>
-      <button id="btnDashboard" class="btn btn-secondary">📊 대시보드 열기</button>
-    </div>
-
-    <!-- 진행 상황 -->
-    <div id="progress" class="section" style="display:none;">
-      <div class="progress-bar">
-        <div id="progressFill" class="progress-fill"></div>
-      </div>
-      <p id="progressText" class="progress-text"></p>
-    </div>
-
-    <!-- 최근 결과 요약 -->
-    <div id="recentResults" class="section" style="display:none;">
-      <h2>최근 분석 결과</h2>
-      <div id="resultCards"></div>
+  <div id="shopSection" class="section" style="display:none;">
+    <div id="shopList" class="shop-list"></div>
+    <div class="actions">
+      <button id="btnAnalyzeAll" class="btn btn-primary">전체 분석</button>
+      <button id="btnDashboard" class="btn btn-secondary">대시보드</button>
     </div>
   </div>
+
+  <div id="progressSection" class="section" style="display:none;">
+    <div class="progress-bar">
+      <div id="progressFill" class="progress-fill"></div>
+    </div>
+    <p id="progressText" class="progress-text"></p>
+  </div>
+
+  <div id="recentResults" class="section" style="display:none;"></div>
 
   <script src="popup.js"></script>
 </body>

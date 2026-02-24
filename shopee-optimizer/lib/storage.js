@@ -1,60 +1,47 @@
-/*============================================================
-  Chrome Storage Helper
-  - 분석 결과 저장/로드
-  - 스냅샷 히스토리 관리
-============================================================*/
-
 const StorageHelper = {
-
-  // ── 분석 결과 저장 ──
   async saveReport(shopId, report) {
+    if (!shopId || !report) return;
     const key = `report_${shopId}`;
-    const historyKey = `history_${shopId}`;
-
-    // 최신 리포트 저장
     await chrome.storage.local.set({ [key]: report });
 
-    // 히스토리에 요약 추가 (최대 30일)
-    const history = await this.get(historyKey) || [];
-    history.push({
-      date: new Date().toISOString(),
+    const histKey = `history_${shopId}`;
+    const data = await chrome.storage.local.get(histKey);
+    const history = data[histKey] || [];
+    history.unshift({
+      date: report.analyzedAt || new Date().toISOString(),
       score: report.score || 0,
       totalProducts: report.summary?.totalProducts || 0,
       totalViews: report.summary?.totalViews || 0,
       totalSold: report.summary?.totalSold || 0,
-      localizationRate: report.titleAudit?.localizationRate || 0,
-      keywordMatchRate: report.keywordAudit?.matchRate || 0,
-      issueCount: report.issues?.length || 0
+      localizationRate: report.summary?.localizationRate || 0,
+      keywordMatchRate: report.summary?.keywordMatchRate || 0,
+      issueCount: (report.issues || []).length
     });
-
-    // 30일 초과분 제거
-    while (history.length > 30) history.shift();
-    await chrome.storage.local.set({ [historyKey]: history });
+    if (history.length > 30) history.length = 30;
+    await chrome.storage.local.set({ [histKey]: history });
   },
 
-  // ── 분석 결과 로드 ──
   async loadReport(shopId) {
-    return this.get(`report_${shopId}`);
+    const data = await chrome.storage.local.get(`report_${shopId}`);
+    return data[`report_${shopId}`] || null;
   },
 
-  // ── 히스토리 로드 ──
   async loadHistory(shopId) {
-    return this.get(`history_${shopId}`) || [];
+    const data = await chrome.storage.local.get(`history_${shopId}`);
+    return data[`history_${shopId}`] || [];
   },
 
-  // ── 모든 샵 리포트 로드 ──
   async loadAllReports() {
     const all = await chrome.storage.local.get(null);
     const reports = {};
-    Object.keys(all).forEach(key => {
+    for (const [key, value] of Object.entries(all)) {
       if (key.startsWith('report_')) {
-        reports[key.replace('report_', '')] = all[key];
+        reports[key.replace('report_', '')] = value;
       }
-    });
+    }
     return reports;
   },
 
-  // ── 설정 저장/로드 ──
   async saveSettings(settings) {
     await chrome.storage.local.set({
       optimizer_settings: settings,
@@ -63,19 +50,27 @@ const StorageHelper = {
   },
 
   async loadSettings() {
-    const result = await chrome.storage.local.get(['optimizer_settings', 'optimizerSettings']);
-    return result.optimizer_settings || result.optimizerSettings || {
-      autoAnalyzeInterval: 24, // hours
-      freshnessRotationEnabled: false,
-      productsPerDay: 7,
-      notificationsEnabled: true
+    const data = await chrome.storage.local.get(['optimizer_settings', 'optimizerSettings']);
+    const s = data.optimizer_settings || data.optimizerSettings || {};
+    return {
+      autoAnalyzeInterval: s.autoAnalyzeInterval ?? 24,
+      freshnessRotationEnabled: s.freshnessRotationEnabled ?? false,
+      productsPerDay: s.productsPerDay ?? 7,
+      notificationsEnabled: s.notificationsEnabled ?? true,
+      geminiKey: s.geminiKey ?? '',
+      geminiModel: s.geminiModel ?? 'gemini-2.0-flash',
+      maxTitleLength: s.maxTitleLength ?? 120,
+      keywordPosition: s.keywordPosition ?? 'front',
+      keepBrand: s.keepBrand ?? 'always',
+      approvalRequired: s.approvalRequired ?? true,
+      autoBackup: s.autoBackup ?? true,
+      ...s
     };
   },
 
-  // ── 유틸리티 ──
   async get(key) {
-    const result = await chrome.storage.local.get(key);
-    return result[key] || null;
+    const data = await chrome.storage.local.get(key);
+    return data[key];
   },
 
   async set(key, value) {
@@ -87,4 +82,4 @@ const StorageHelper = {
   }
 };
 
-if (typeof module !== 'undefined') module.exports = StorageHelper;
+export { StorageHelper };

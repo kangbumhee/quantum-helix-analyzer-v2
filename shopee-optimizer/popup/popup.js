@@ -1,211 +1,171 @@
-/*============================================================
-  Popup Controller
-  - 로그인 상태 확인
-  - 샵 목록 표시
-  - 분석 실행/결과 표시
-============================================================*/
+document.addEventListener('DOMContentLoaded', () => {
+  const btnConnect = document.getElementById('btnConnectCookie');
+  const btnAnalyzeAll = document.getElementById('btnAnalyzeAll');
+  const btnDashboard = document.getElementById('btnDashboard');
+  const loginStatus = document.getElementById('loginStatus');
+  const shopSection = document.getElementById('shopSection');
+  const shopList = document.getElementById('shopList');
+  const progressSection = document.getElementById('progressSection');
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+  const recentResults = document.getElementById('recentResults');
 
-document.addEventListener('DOMContentLoaded', init);
-
-async function init() {
-  // 진행상황 리스너
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'ANALYSIS_PROGRESS') {
-      showProgress(msg.message, msg.percent);
+      showProgress(`${msg.shopName || ''} 분석 중... (${msg.current}/${msg.total})`);
+      progressFill.style.width = `${(msg.current / msg.total) * 100}%`;
     }
   });
 
-  // 로그인 확인
-  try {
-    var res = await sendMessage({ type: 'GET_SHOPS' });
-    if (res && res.success && res.data && res.data.length > 0) {
-      showLoginSuccess(res.data.length);
-      renderShops(res.data);
+  sendMessage({ type: 'GET_SHOPS' }).then(res => {
+    if (res.success && res.shops) {
+      showLoginSuccess(`${res.shops.length}개 샵 연결됨`);
+      renderShops(res.shops);
       loadRecentResults();
     } else {
-      showLoginError();
+      showLoginError('로그인이 필요합니다.');
     }
-  } catch (e) {
-    showLoginError();
-  }
+  });
 
-  // 버튼 이벤트
-  document.getElementById('btnAnalyzeAll').addEventListener('click', analyzeAll);
-  document.getElementById('btnDashboard').addEventListener('click', openDashboard);
-  document.getElementById('btnConnectCookie').addEventListener('click', async function () {
-    var btn = document.getElementById('btnConnectCookie');
-    btn.disabled = true;
-    btn.textContent = '연결 중...';
-    try {
-      var res = await sendMessage({ type: 'CONNECT_VIA_COOKIE' });
-      if (res && res.success) {
-        showLoginSuccess(res.totalShops || 0);
-        var shopRes = await sendMessage({ type: 'GET_SHOPS' });
-        if (shopRes && shopRes.success && shopRes.data) {
-          renderShops(shopRes.data);
+  btnConnect.addEventListener('click', async () => {
+    btnConnect.disabled = true;
+    btnConnect.textContent = '연결 중...';
+    const res = await sendMessage({ type: 'CONNECT_VIA_COOKIE' });
+    btnConnect.disabled = false;
+    btnConnect.textContent = '쿠키로 연결';
+    if (res.success) {
+      showLoginSuccess(`${res.shops.length}개 샵 연결됨`);
+      renderShops(res.shops);
+      loadRecentResults();
+    } else {
+      showLoginError(res.error || '연결 실패');
+    }
+  });
+
+  btnAnalyzeAll.addEventListener('click', async () => {
+    btnAnalyzeAll.disabled = true;
+    progressSection.style.display = 'block';
+    showProgress('전체 분석 시작...');
+
+    const res = await sendMessage({ type: 'ANALYZE_ALL' });
+    btnAnalyzeAll.disabled = false;
+    progressSection.style.display = 'none';
+
+    if (res.success) {
+      const allReports = await sendMessage({ type: 'GET_ALL_REPORTS' });
+      if (allReports.success) {
+        for (const [shopId, report] of Object.entries(allReports.reports)) {
+          updateShopScore(shopId, report.score);
         }
-      } else {
-        alert(res && res.error ? res.error : '연결 실패');
       }
-    } catch (e) {
-      alert('연결 실패: ' + (e && e.message ? e.message : e));
+      loadRecentResults();
     }
-    btn.disabled = false;
-    btn.textContent = '🍪 쿠키 연결';
-  });
-}
-
-// ── 메시지 헬퍼 (응답 없을 때 undefined 방지) ──
-function sendMessage(msg) {
-  return new Promise(function (resolve) {
-    chrome.runtime.sendMessage(msg, function (response) {
-      resolve(response != null ? response : { success: false, error: 'No response' });
-    });
-  });
-}
-
-// ── 로그인 상태 ──
-function showLoginSuccess(shopCount) {
-  const bar = document.getElementById('loginStatus');
-  bar.className = 'status-bar success';
-  document.getElementById('statusIcon').textContent = '✅';
-  document.getElementById('statusText').textContent = `로그인됨 — ${shopCount}개 샵 감지`;
-  document.getElementById('shopList').style.display = 'block';
-  document.getElementById('actions').style.display = 'block';
-}
-
-function showLoginError() {
-  const bar = document.getElementById('loginStatus');
-  bar.className = 'status-bar error';
-  document.getElementById('statusIcon').textContent = '❌';
-  document.getElementById('statusText').textContent = 'Shopee Seller Center에 먼저 로그인하세요';
-}
-
-// ── 샵 목록 렌더링 (name/shop_name null 방어) ──
-function renderShops(shops) {
-  if (!shops || !shops.length) return;
-  var container = document.getElementById('shops');
-  var name, region;
-  container.innerHTML = shops.map(function (shop) {
-    name = (shop.name != null ? shop.name : shop.shop_name) || '';
-    region = (shop.region != null ? String(shop.region) : '') || 'sg';
-    return '<div class="shop-card" data-shop-id="' + shop.shop_id + '" data-region="' + region.toLowerCase() + '" data-name="' + String(name).replace(/"/g, '&quot;') + '">' +
-      '<div><span class="shop-name">' + name + '</span></div>' +
-      '<div style="display:flex;gap:6px;align-items:center;">' +
-      '<span class="shop-region">' + region.toUpperCase() + '</span>' +
-      '<span class="shop-score" id="score-' + shop.shop_id + '">—</span></div></div>';
-  }).join('');
-
-  // 개별 샵 클릭 → 분석
-  container.querySelectorAll('.shop-card').forEach(card => {
-    card.addEventListener('click', () => {
-      analyzeSingleShop(
-        card.dataset.shopId,
-        card.dataset.region,
-        card.dataset.name
-      );
-    });
-  });
-}
-
-// ── 개별 샵 분석 ──
-async function analyzeSingleShop(shopId, region, name) {
-  document.getElementById('progress').style.display = 'block';
-  document.getElementById('btnAnalyzeAll').disabled = true;
-
-  const res = await sendMessage({
-    type: 'ANALYZE_SHOP',
-    shopId,
-    region,
-    shopName: name
   });
 
-  document.getElementById('btnAnalyzeAll').disabled = false;
+  btnDashboard.addEventListener('click', () => {
+    sendMessage({ type: 'OPEN_DASHBOARD' });
+  });
 
-  if (res.success) {
-    updateShopScore(shopId, res.data.score);
-    loadRecentResults();
-  } else {
-    showProgress('❌ 분석 실패: ' + res.error, 0);
+  function sendMessage(msg) {
+    return chrome.runtime.sendMessage(msg);
   }
-}
 
-// ── 전체 분석 ──
-async function analyzeAll() {
-  document.getElementById('progress').style.display = 'block';
-  document.getElementById('btnAnalyzeAll').disabled = true;
-
-  const res = await sendMessage({ type: 'ANALYZE_ALL' });
-
-  document.getElementById('btnAnalyzeAll').disabled = false;
-
-  if (res.success) {
-    res.data.forEach(report => {
-      if (report.shopId) {
-        updateShopScore(report.shopId, report.score);
-      }
-    });
-    loadRecentResults();
+  function showLoginSuccess(text) {
+    loginStatus.textContent = text;
+    loginStatus.className = 'status-bar success';
+    shopSection.style.display = 'block';
+    btnConnect.style.display = 'none';
   }
-}
 
-// ── 진행상황 ──
-function showProgress(message, percent) {
-  document.getElementById('progress').style.display = 'block';
-  document.getElementById('progressFill').style.width = percent + '%';
-  document.getElementById('progressText').textContent = message;
-}
+  function showLoginError(text) {
+    loginStatus.textContent = text;
+    loginStatus.className = 'status-bar error';
+    shopSection.style.display = 'none';
+    btnConnect.style.display = 'block';
+  }
 
-// ── 점수 업데이트 ──
-function updateShopScore(shopId, score) {
-  const el = document.getElementById(`score-${shopId}`);
-  if (!el) return;
-  el.textContent = score;
-  el.className = 'shop-score ' + (score >= 70 ? 'score-good' : score >= 40 ? 'score-warn' : 'score-bad');
-}
+  function showProgress(text) {
+    progressSection.style.display = 'block';
+    progressText.textContent = text;
+  }
 
-// ── 최근 결과 로드 ──
-async function loadRecentResults() {
-  const res = await sendMessage({ type: 'GET_ALL_REPORTS' });
-  if (!res.success || !res.data) return;
-
-  const container = document.getElementById('resultCards');
-  const reports = Object.values(res.data).filter(r => r && r.shopName);
-
-  if (reports.length === 0) return;
-
-  document.getElementById('recentResults').style.display = 'block';
-
-  reports.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-  container.innerHTML = reports.slice(0, 5).map(r => {
-    const critCount = r.issues ? r.issues.filter(i => i.severity === 'CRITICAL').length : 0;
-    const highCount = r.issues ? r.issues.filter(i => i.severity === 'HIGH').length : 0;
-    const medCount = r.issues ? r.issues.filter(i => i.severity === 'MEDIUM').length : 0;
-
-    return `
-      <div class="result-card">
-        <div class="result-header">
-          <span class="result-name">${r.shopName} (${r.region})</span>
-          <span class="shop-score ${r.score >= 70 ? 'score-good' : r.score >= 40 ? 'score-warn' : 'score-bad'}">${r.score}점</span>
-        </div>
-        <div class="result-issues">
-          ${critCount > 0 ? `<span class="issue-badge issue-critical">심각 ${critCount}</span>` : ''}
-          ${highCount > 0 ? `<span class="issue-badge issue-high">높음 ${highCount}</span>` : ''}
-          ${medCount > 0 ? `<span class="issue-badge issue-medium">보통 ${medCount}</span>` : ''}
-        </div>
-        <div class="result-stats">
-          <span>상품 ${r.summary?.totalProducts || 0}</span>
-          <span>조회 ${r.summary?.totalViews || 0}</span>
-          <span>판매 ${r.summary?.totalSold || 0}</span>
-          <span>키워드 ${r.keywordAudit?.matchRate || 0}%</span>
-        </div>
+  function renderShops(shops) {
+    shopList.innerHTML = shops.map(s => `
+      <div class="shop-card" data-shop-id="${s.shopId}">
+        <span class="score" id="score-${s.shopId}">—</span>
+        <div class="name">${escapeHtml(s.name)}</div>
+        <div class="region">${s.region}</div>
       </div>
-    `;
-  }).join('');
-}
+    `).join('');
 
-// ── 대시보드 열기 ──
-function openDashboard() {
-  sendMessage({ type: 'OPEN_DASHBOARD' });
-}
+    shopList.querySelectorAll('.shop-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const shopId = card.dataset.shopId;
+        const shop = shops.find(s => String(s.shopId) === shopId);
+        if (shop) analyzeSingleShop(shop);
+      });
+    });
+  }
+
+  async function analyzeSingleShop(shop) {
+    showProgress(`${shop.name} 분석 중...`);
+    progressFill.style.width = '0%';
+    progressSection.style.display = 'block';
+
+    const res = await sendMessage({
+      type: 'ANALYZE_SHOP',
+      shopId: shop.shopId,
+      region: shop.region,
+      shopName: shop.name
+    });
+
+    progressSection.style.display = 'none';
+    if (res.success) {
+      updateShopScore(shop.shopId, res.report.score);
+      loadRecentResults();
+    }
+  }
+
+  function updateShopScore(shopId, score) {
+    const el = document.getElementById(`score-${shopId}`);
+    if (el) el.textContent = score ?? '—';
+  }
+
+  async function loadRecentResults() {
+    const res = await sendMessage({ type: 'GET_ALL_REPORTS' });
+    if (!res.success || !res.reports) { recentResults.style.display = 'none'; return; }
+
+    recentResults.style.display = 'block';
+    const entries = Object.entries(res.reports);
+    if (entries.length === 0) { recentResults.innerHTML = '<p style="color:#888;">분석 결과 없음</p>'; return; }
+
+    recentResults.innerHTML = '<h3 style="color:#fff;margin-bottom:8px;">최근 분석 결과</h3>' +
+      entries.map(([shopId, r]) => {
+        const issues = r.issues || [];
+        const criticals = issues.filter(i => i.level === 'critical').length;
+        const highs = issues.filter(i => i.level === 'high').length;
+        return `
+        <div class="result-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="shop-name">${escapeHtml(r.shopName || shopId)}</span>
+            <span class="result-score">${r.score ?? '—'}</span>
+          </div>
+          <div class="stats">
+            <span>상품 ${r.summary?.totalProducts || 0}</span>
+            <span>조회 ${r.summary?.totalViews || 0}</span>
+            <span>판매 ${r.summary?.totalSold || 0}</span>
+          </div>
+          <div style="margin-top:6px;">
+            ${criticals > 0 ? `<span class="badge critical">심각 ${criticals}</span> ` : ''}
+            ${highs > 0 ? `<span class="badge high">높음 ${highs}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+});

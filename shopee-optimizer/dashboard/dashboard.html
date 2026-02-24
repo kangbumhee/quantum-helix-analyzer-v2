@@ -2,143 +2,114 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shopee Optimizer — Dashboard</title>
+  <title>Shopee Optimizer - Dashboard</title>
   <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
   <div class="app">
-    <!-- 사이드바 -->
-    <nav class="sidebar">
-      <div class="logo">🛍️ Shopee<br>Optimizer</div>
-      <ul class="nav-list" id="navList">
-        <li class="nav-item active" data-tab="overview">📊 전체 개요</li>
-        <li class="nav-item" data-tab="issues">⚠️ 문제점</li>
-        <li class="nav-item" data-tab="keyword-analysis">🔑 키워드 분석</li>
-        <li class="nav-item" data-tab="title-optimization">✏️ 제목 최적화</li>
-        <li class="nav-item" data-tab="freshness">🔄 Freshness</li>
-        <li class="nav-item" data-tab="product-list">📦 상품 목록</li>
-        <li class="nav-item" data-tab="ai-optimize">🤖 AI 최적화</li>
-        <li class="nav-item" data-tab="apply-changes">✅ 수정 적용</li>
-        <li class="nav-item" data-tab="history">📋 수정 이력</li>
-      </ul>
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Shopee Optimizer</h2>
+      </div>
+      <nav class="nav">
+        <a class="nav-item active" data-tab="overview">전체 개요</a>
+        <a class="nav-item" data-tab="issues">문제점</a>
+        <a class="nav-item" data-tab="keywords">키워드 분석</a>
+        <a class="nav-item" data-tab="titles">제목 최적화</a>
+        <a class="nav-item" data-tab="freshness">Freshness</a>
+        <a class="nav-item" data-tab="products">상품 목록</a>
+        <a class="nav-item" data-tab="ai">AI 최적화</a>
+        <a class="nav-item" data-tab="apply">수정 적용</a>
+        <a class="nav-item" data-tab="history">수정 이력</a>
+      </nav>
       <div class="sidebar-footer">
-        <select id="shopSelector" class="shop-select">
-          <option value="all">전체 샵</option>
-        </select>
-        <button id="btnRefresh" class="btn-refresh">🔄 새로고침</button>
-        <button id="btnConnectCookie" class="btn-refresh btn-cookie">🍪 쿠키 연결</button>
+        <select id="shopSelector" class="shop-select"></select>
+        <button id="btnRefresh" class="btn-small">새로고침</button>
+        <button id="btnConnectDash" class="btn-small">쿠키 연결</button>
       </div>
-    </nav>
+    </aside>
 
-    <!-- 메인 콘텐츠 -->
     <main class="main">
-      <!-- 전체 개요 -->
-      <div id="tab-overview" class="tab-content active">
+      <section id="tab-overview" class="tab-section active">
         <h1>전체 개요</h1>
-        <div class="metrics-grid" id="overviewMetrics"></div>
-        <div class="cards-grid" id="shopCards"></div>
-      </div>
+        <p class="tab-desc">모든 샵의 분석 결과를 한눈에 확인하세요.</p>
+        <div id="metricsGrid" class="metrics-grid"></div>
+        <div id="shopCards" class="shop-cards"></div>
+      </section>
 
-      <!-- 문제점 -->
-      <div id="tab-issues" class="tab-content">
-        <h1>문제점 분석</h1>
+      <section id="tab-issues" class="tab-section">
+        <h1>문제점</h1>
+        <p class="tab-desc">감지된 이슈를 심각도별로 확인합니다.</p>
         <div id="issuesList"></div>
-      </div>
+      </section>
 
-      <!-- 키워드 분석 -->
-      <div id="tab-keyword-analysis" class="tab-content">
+      <section id="tab-keywords" class="tab-section">
         <h1>키워드 분석</h1>
-        <div class="two-col">
+        <p class="tab-desc">인기 키워드와 트렌딩 키워드를 비교합니다.</p>
+        <div class="keyword-columns">
           <div>
-            <h2>🔥 인기 키워드</h2>
+            <h2>인기 키워드</h2>
             <div id="popularKeywords"></div>
           </div>
           <div>
-            <h2>📈 트렌딩 키워드</h2>
+            <h2>트렌딩 키워드</h2>
             <div id="trendingKeywords"></div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- 제목 최적화 -->
-      <div id="tab-title-optimization" class="tab-content" style="display:none;">
-        <div class="page-header">
-          <h2>✏️ 제목 최적화 제안</h2>
-          <p class="page-desc">인기 키워드가 누락된 상품의 제목 개선안입니다. 우선순위가 높은 항목부터 수정하세요.</p>
+      <section id="tab-titles" class="tab-section">
+        <h1>제목 최적화</h1>
+        <p class="tab-desc">키워드 기반 제목 개선 제안입니다.</p>
+        <div class="title-controls">
+          <select id="titleShopSelect" class="shop-select"></select>
+          <button id="btnRefreshTitles" class="btn-small">새로고침</button>
         </div>
+        <div id="titleResults"></div>
+      </section>
 
-        <div class="control-bar" style="margin-bottom:20px;">
-          <select id="titleOptShopSelect" class="select-control"></select>
-          <button id="btnRefreshTitleOpt" class="btn-refresh">🔄 새로고침</button>
-        </div>
+      <section id="tab-freshness" class="tab-section">
+        <h1>Freshness</h1>
+        <p class="tab-desc">상품 수정 주기별 Freshness 상태를 확인합니다.</p>
+        <select id="freshnessShopFilter" class="shop-select"></select>
+        <div id="freshnessSummary"></div>
+        <div id="freshnessProductList"></div>
+      </section>
 
-        <div id="titleOptResults"></div>
-      </div>
-
-      <!-- Freshness -->
-      <div id="tab-freshness" class="tab-content">
-        <h1>Freshness Boost 모니터링</h1>
-        <div style="margin-bottom:16px;">
-          <select id="freshnessShopFilter" class="select-control">
-            <option value="all">전체 샵</option>
-          </select>
-        </div>
-        <div class="freshness-summary" id="freshnessSummary"></div>
-        <div id="freshnessProducts"></div>
-      </div>
-
-      <!-- 상품 목록 -->
-      <div id="tab-product-list" class="tab-content">
+      <section id="tab-products" class="tab-section">
         <h1>상품 목록</h1>
+        <p class="tab-desc">전체 상품 목록과 성과 데이터입니다.</p>
         <div id="productListContent"></div>
-      </div>
+      </section>
 
-      <!-- AI 최적화 탭 -->
-      <div id="tab-ai-optimize" class="tab-content" style="display:none;">
+      <section id="tab-ai" class="tab-section">
+        <h1>AI 최적화</h1>
+        <p class="tab-desc">Gemini AI를 활용한 자동 제목/설명 최적화입니다.</p>
         <div class="ai-controls">
-          <select id="aiShopSelect" class="shop-select">
-            <option value="">샵 선택...</option>
-          </select>
-
-          <button id="btnAIAnalyze" class="btn-ai-action btn-primary">
-            ✨ AI 분석 시작
-          </button>
-          <button id="btnRunAllShops" class="btn-ai-action btn-secondary">
-            🌐 전체 샵 일괄 분석
-          </button>
+          <select id="aiShopSelect" class="shop-select"></select>
+          <button id="btnAIAnalyze" class="btn-primary">AI 분석 시작</button>
+          <button id="btnAIAll" class="btn-secondary">전체 샵 AI 분석</button>
         </div>
-
-        <div id="aiProgress" class="progress-section" style="display:none;">
-          <div class="progress-bar-container">
-            <div class="progress-bar">
-              <div id="aiProgressBar" class="progress-fill"></div>
-            </div>
-            <span id="aiProgressPct" class="progress-pct">0%</span>
-          </div>
-          <p id="aiProgressText" class="progress-text">준비 중...</p>
-          <p id="aiProgressDetail" class="progress-detail"></p>
+        <div id="aiProgress" class="ai-progress" style="display:none;">
+          <div class="progress-bar"><div id="aiProgressFill" class="progress-fill"></div></div>
+          <span id="aiProgressPct" class="progress-pct">0%</span>
+          <p id="aiProgressText" class="progress-text"></p>
         </div>
+        <div id="aiResults"></div>
+      </section>
 
-        <div id="aiResultsContainer"></div>
-      </div>
-
-      <!-- 수정 적용 결과 탭 -->
-      <div id="tab-apply-changes" class="tab-content">
-        <div class="page-header">
-          <h2>✅ 수정 적용 결과</h2>
-        </div>
+      <section id="tab-apply" class="tab-section">
+        <h1>수정 적용</h1>
+        <p class="tab-desc">AI 최적화 결과를 실제 상품에 적용합니다.</p>
         <div id="applyResults"></div>
-      </div>
+      </section>
 
-      <!-- 수정 이력 탭 -->
-      <div id="tab-history" class="tab-content">
-        <div class="page-header">
-          <h2>📋 수정 이력</h2>
-          <button id="btnClearHistory" class="btn-refresh">이력 삭제</button>
-        </div>
+      <section id="tab-history" class="tab-section">
+        <h1>수정 이력</h1>
+        <p class="tab-desc">과거 수정 내역을 확인합니다.</p>
+        <button id="btnClearHistory" class="btn-small" style="margin-bottom:12px;">이력 삭제</button>
         <div id="historyList"></div>
-      </div>
+      </section>
     </main>
   </div>
 

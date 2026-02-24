@@ -1,93 +1,156 @@
-// options/options.js
 (function () {
   const DEFAULTS = {
-    geminiKey: "",
-    geminiModel: "gemini-2.5-flash",
+    geminiKey: '',
+    geminiModel: 'gemini-2.0-flash',
     maxTitleLength: 120,
-    keywordPosition: "front",
-    keepBrand: "always",
-    autoFreshness: true,
-    dailyFreshness: 7,
-    freshnessInterval: 7,
-    requireApproval: true,
-    autoBackup: true
+    keywordPosition: 'front',
+    keepBrand: 'always',
+    freshnessRotationEnabled: false,
+    productsPerDay: 7,
+    rotationInterval: 7,
+    approvalRequired: true,
+    autoBackup: true,
+    autoAnalyzeInterval: 24,
+    notificationsEnabled: true
   };
 
-  const FIELDS = ["geminiKey", "geminiModel", "maxTitleLength", "keywordPosition", "keepBrand", "dailyFreshness", "freshnessInterval"];
-  const TOGGLES = ["autoFreshness", "requireApproval", "autoBackup"];
+  const FIELDS = {
+    text: ['geminiKey', 'maxTitleLength', 'productsPerDay', 'rotationInterval', 'autoAnalyzeInterval'],
+    select: ['geminiModel', 'keywordPosition', 'keepBrand'],
+    checkbox: ['freshnessRotationEnabled', 'approvalRequired', 'autoBackup', 'notificationsEnabled']
+  };
 
-  function load() {
-    chrome.storage.local.get("optimizerSettings", (res) => {
-      const s = Object.assign({}, DEFAULTS, res.optimizerSettings || {});
-      FIELDS.forEach((f) => {
-        const el = document.getElementById(f);
-        if (el) el.value = s[f] || "";
-      });
-      TOGGLES.forEach((t) => {
-        const el = document.getElementById(t);
-        if (el) el.checked = !!s[t];
-      });
-    });
+  async function loadSettings() {
+    const data = await chrome.storage.local.get(['optimizer_settings', 'optimizerSettings']);
+    const settings = data.optimizer_settings || data.optimizerSettings || {};
+    const merged = { ...DEFAULTS, ...settings };
+
+    for (const id of FIELDS.text) {
+      const el = document.getElementById(id);
+      if (el) el.value = merged[id] ?? DEFAULTS[id];
+    }
+    for (const id of FIELDS.select) {
+      const el = document.getElementById(id);
+      if (el) el.value = merged[id] ?? DEFAULTS[id];
+    }
+    for (const id of FIELDS.checkbox) {
+      const el = document.getElementById(id);
+      if (el) el.checked = merged[id] ?? DEFAULTS[id];
+    }
   }
 
-  function save() {
-    const s = {};
-    FIELDS.forEach((f) => { s[f] = document.getElementById(f).value; });
-    TOGGLES.forEach((t) => { s[t] = document.getElementById(t).checked; });
-    s.maxTitleLength = parseInt(s.maxTitleLength, 10) || 120;
-    s.dailyFreshness = parseInt(s.dailyFreshness, 10) || 7;
-    s.freshnessInterval = parseInt(s.freshnessInterval, 10) || 7;
-    chrome.storage.local.set({ optimizerSettings: s }, () => {
-      showStatus("saveStatus", "✅ 설정이 저장되었습니다", "success");
-    });
+  function collectSettings() {
+    const settings = {};
+    for (const id of FIELDS.text) {
+      const el = document.getElementById(id);
+      if (el) {
+        settings[id] = el.type === 'number' ? parseInt(el.value, 10) || DEFAULTS[id] : el.value;
+      }
+    }
+    for (const id of FIELDS.select) {
+      const el = document.getElementById(id);
+      if (el) settings[id] = el.value;
+    }
+    for (const id of FIELDS.checkbox) {
+      const el = document.getElementById(id);
+      if (el) settings[id] = el.checked;
+    }
+    return settings;
   }
 
-  async function testKey() {
-    const key = document.getElementById("geminiKey").value.trim();
-    const model = document.getElementById("geminiModel").value;
+  async function saveSettings() {
+    const settings = collectSettings();
+    await chrome.storage.local.set({
+      optimizer_settings: settings,
+      optimizerSettings: settings
+    });
+
+    try {
+      chrome.alarms.clear('auto_analyze');
+      chrome.alarms.create('auto_analyze', {
+        periodInMinutes: (settings.autoAnalyzeInterval || 24) * 60
+      });
+    } catch (e) {
+      console.warn('Alarm update failed', e);
+    }
+
+    showToast('설정이 저장되었습니다.');
+  }
+
+  function resetSettings() {
+    if (!confirm('설정을 초기값으로 되돌리시겠습니까?')) return;
+    for (const id of FIELDS.text) {
+      const el = document.getElementById(id);
+      if (el) el.value = DEFAULTS[id];
+    }
+    for (const id of FIELDS.select) {
+      const el = document.getElementById(id);
+      if (el) el.value = DEFAULTS[id];
+    }
+    for (const id of FIELDS.checkbox) {
+      const el = document.getElementById(id);
+      if (el) el.checked = DEFAULTS[id];
+    }
+    showToast('기본값으로 초기화되었습니다. 저장을 눌러주세요.');
+  }
+
+  async function testApi() {
+    const key = document.getElementById('geminiKey').value.trim();
+    const model = document.getElementById('geminiModel').value;
+    const resultEl = document.getElementById('testResult');
+
     if (!key) {
-      showStatus("keyStatus", "❌ API Key를 입력하세요", "error");
+      resultEl.textContent = 'API 키를 입력하세요.';
+      resultEl.className = 'fail';
       return;
     }
-    showStatus("keyStatus", "⏳ 테스트 중...", "success");
+
+    resultEl.textContent = '테스트 중...';
+    resultEl.className = '';
+
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
       const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: "Say OK in one word." }] }],
+          contents: [{ parts: [{ text: 'Say "OK" in one word.' }] }],
           generationConfig: { maxOutputTokens: 10 }
         })
       });
-      const data = await res.json();
-      if (data.candidates && data.candidates.length > 0) {
-        showStatus("keyStatus", "✅ API Key 정상 작동! 모델: " + model, "success");
-      } else if (data.error) {
-        showStatus("keyStatus", "❌ 오류: " + data.error.message, "error");
+
+      if (res.ok) {
+        const json = await res.json();
+        const reply = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        resultEl.textContent = `연결 성공! 응답: ${reply.trim()}`;
+        resultEl.className = 'ok';
       } else {
-        showStatus("keyStatus", "⚠️ 알 수 없는 응답", "error");
+        const err = await res.json().catch(() => ({}));
+        resultEl.textContent = `오류 ${res.status}: ${err?.error?.message || '알 수 없는 오류'}`;
+        resultEl.className = 'fail';
       }
     } catch (e) {
-      showStatus("keyStatus", "❌ 연결 실패: " + e.message, "error");
+      resultEl.textContent = `네트워크 오류: ${e.message}`;
+      resultEl.className = 'fail';
     }
   }
 
-  function showStatus(id, msg, type) {
-    const el = document.getElementById(id);
-    el.textContent = msg;
-    el.className = "status " + type;
+  function showToast(msg) {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'toast';
+      toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#7c4dff;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;z-index:999;opacity:0;transition:opacity 0.3s;';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    setTimeout(() => { toast.style.opacity = '0'; }, 2500);
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    load();
-    document.getElementById("btnSave").addEventListener("click", save);
-    document.getElementById("btnTestKey").addEventListener("click", testKey);
-    document.getElementById("btnReset").addEventListener("click", () => {
-      chrome.storage.local.remove("optimizerSettings", () => {
-        load();
-        showStatus("saveStatus", "초기화 완료", "success");
-      });
-    });
-  });
+  document.getElementById('btnSave').addEventListener('click', saveSettings);
+  document.getElementById('btnReset').addEventListener('click', resetSettings);
+  document.getElementById('btnTestApi').addEventListener('click', testApi);
+
+  loadSettings();
 })();
