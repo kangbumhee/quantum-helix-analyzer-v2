@@ -243,7 +243,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         case 'GET_ALL_REPORTS': {
           const reports = await StorageHelper.loadAllReports();
-          return { success: true, reports };
+          return { success: true, data: reports, reports };
         }
 
         case 'GET_HISTORY': {

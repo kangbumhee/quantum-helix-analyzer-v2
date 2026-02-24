@@ -525,18 +525,12 @@ function renderProducts() {
 }
 
 function switchTab(tabName) {
-  document.querySelectorAll('.tab-content').forEach((t) => {
-    t.classList.remove('active');
-    t.style.display = 'none';
-  });
-  document.querySelectorAll('.nav-item').forEach((n) => n.classList.remove('active'));
-  const tab = document.getElementById('tab-' + tabName);
-  if (tab) {
-    tab.classList.add('active');
-    tab.style.display = 'block';
-  }
-  const nav = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
-  if (nav) nav.classList.add('active');
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const target = document.getElementById('tab-' + tabName);
+  if (target) target.classList.add('active');
+  const navItem = document.querySelector('.nav-item[data-tab="' + tabName + '"]');
+  if (navItem) navItem.classList.add('active');
 }
 
 async function initAITab() {

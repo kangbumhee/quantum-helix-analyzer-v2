@@ -25,7 +25,7 @@
       <div class="sidebar-footer">
         <select id="shopSelector" class="shop-select"></select>
         <button id="btnRefresh" class="btn-small">새로고침</button>
-        <button id="btnConnectDash" class="btn-small">쿠키 연결</button>
+        <button id="btnConnectCookie" class="btn-small">쿠키 연결</button>
       </div>
     </aside>
 
@@ -33,7 +33,7 @@
       <section id="tab-overview" class="tab-section active">
         <h1>전체 개요</h1>
         <p class="tab-desc">모든 샵의 분석 결과를 한눈에 확인하세요.</p>
-        <div id="metricsGrid" class="metrics-grid"></div>
+        <div id="overviewMetrics" class="metrics-grid"></div>
         <div id="shopCards" class="shop-cards"></div>
       </section>
 
@@ -88,7 +88,7 @@
         <div class="ai-controls">
           <select id="aiShopSelect" class="shop-select"></select>
           <button id="btnAIAnalyze" class="btn-primary">AI 분석 시작</button>
-          <button id="btnAIAll" class="btn-secondary">전체 샵 AI 분석</button>
+          <button id="btnRunAllShops" class="btn-secondary">전체 샵 AI 분석</button>
         </div>
         <div id="aiProgress" class="ai-progress" style="display:none;">
           <div class="progress-bar"><div id="aiProgressFill" class="progress-fill"></div></div>
