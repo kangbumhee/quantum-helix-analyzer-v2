@@ -118,8 +118,8 @@ async function handleConnectViaCookie() {
 
       const newShop = {
         shop_id: shopId,
-        name: shop.name || shop.shop_name || shop.user_name || 'Shop ' + shopId,
-        shop_name: shop.name || shop.shop_name || shop.user_name || 'Shop ' + shopId,
+        name: shop.user_name || shop.name || shop.shop_name || 'Shop ' + shopId,
+        shop_name: shop.user_name || shop.name || shop.shop_name || 'Shop ' + shopId,
         region: ((shop.region || region) + '').toLowerCase(),
         cookie_auth: true,
         spc_cds: spcCds,
@@ -179,16 +179,38 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           sendResponse({ success: false, error: '로그인 필요' });
           return;
         }
-        const url = 'https://' + found.sellerDomain + '/api/v3/general/get_shop_list?SPC_CDS=' + encodeURIComponent(found.spcCds) + '&SPC_CDS_VER=2';
-        fetch(url, { credentials: 'include' })
-          .then(function (r) { return r.json(); })
-          .then(function (data) {
-            const list = (data.data?.shop_list || []).filter(function (s) { return !s.status || s.status === 1; });
-            sendResponse({ success: true, data: list });
-          })
-          .catch(function (err) {
-            sendResponse({ success: false, error: err && err.message ? err.message : 'Fetch failed' });
-          });
+        const endpoints = [
+          '/api/v3/merchant/get_shop_list',
+          '/api/v3/general/get_shop_list',
+          '/api/v3/merchant/get_all_shop_info_list'
+        ];
+        (async function () {
+          for (const ep of endpoints) {
+            try {
+              const epUrl = 'https://' + found.sellerDomain + ep + '?SPC_CDS=' + encodeURIComponent(found.spcCds) + '&SPC_CDS_VER=2';
+              const r = await fetch(epUrl, { credentials: 'include' });
+              if (!r.ok) continue;
+              const data = await r.json();
+              const rawList = data.data?.list || data.data?.shop_list || data.data?.all_shop_info_list || data.data?.shops || [];
+              if (rawList.length > 0) {
+                const list = rawList.map(function (s) {
+                  return {
+                    shop_id: String(s.shop_id || s.id || ''),
+                    name: s.user_name || s.shop_name || s.name || '',
+                    shop_name: s.user_name || s.shop_name || s.name || '',
+                    region: (s.region || s.cb_region || 'sg').toLowerCase(),
+                    status: s.shop_status || s.status || 1
+                  };
+                });
+                sendResponse({ success: true, data: list });
+                return;
+              }
+            } catch (e) {
+              // try next endpoint
+            }
+          }
+          sendResponse({ success: false, error: '샵 목록 없음' });
+        })();
       });
     });
     return true;
@@ -263,21 +285,38 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           return;
         }
         const domain = msg.sellerDomain || spcData.domain;
-        const url = `https://${domain}/api/v3/opt/mpsku/list/v2/search_product_list?page_number=1&page_size=48&source=seller_center&need_statistic_info=true&SPC_CDS=${encodeURIComponent(spcData.spc)}&SPC_CDS_VER=2&cnsc_shop_id=${msg.shopId}&cbsc_shop_region=${msg.region}`;
-        const res = await fetch(url, { credentials: 'include' });
-        const data = await res.json();
-        const products = data.data?.products || [];
+        const shopId = msg.shopId;
+        const region = msg.region;
+        const PAGE_SIZE = 48;
+
+        const firstUrl = `https://${domain}/api/v3/opt/mpsku/list/v2/search_product_list?page_number=1&page_size=${PAGE_SIZE}&source=seller_center&need_statistic_info=true&SPC_CDS=${encodeURIComponent(spcData.spc)}&SPC_CDS_VER=2&cnsc_shop_id=${shopId}&cbsc_shop_region=${region}`;
+        const firstRes = await fetch(firstUrl, { credentials: 'include' });
+        const firstData = await firstRes.json();
+        let allProducts = firstData.data?.products || [];
+        const total = firstData.data?.page_info?.total || allProducts.length;
+        const totalPages = Math.min(Math.ceil(total / PAGE_SIZE), 120);
+
+        for (let p = 2; p <= totalPages; p++) {
+          const pageUrl = `https://${domain}/api/v3/opt/mpsku/list/v2/search_product_list?page_number=${p}&page_size=${PAGE_SIZE}&source=seller_center&need_statistic_info=true&SPC_CDS=${encodeURIComponent(spcData.spc)}&SPC_CDS_VER=2&cnsc_shop_id=${shopId}&cbsc_shop_region=${region}`;
+          try {
+            const pageRes = await fetch(pageUrl, { credentials: 'include' });
+            const pageData = await pageRes.json();
+            const products = pageData.data?.products || [];
+            if (products.length === 0) break;
+            allProducts = allProducts.concat(products);
+          } catch (e) {
+            console.warn('[GET_PRODUCTS] page', p, 'failed:', e.message);
+          }
+          await new Promise(function (r) { setTimeout(r, 200); });
+        }
+
         const seen = {};
-        const unique = products.filter(function (p) {
+        const unique = allProducts.filter(function (p) {
           if (seen[p.id]) return false;
           seen[p.id] = true;
           return true;
         });
-        // 첫 번째 상품의 statistics 키 로깅 (디버그용)
-        if (unique.length > 0 && unique[0].statistics) {
-          console.log('[DEBUG] Product statistics keys:', Object.keys(unique[0].statistics));
-          console.log('[DEBUG] Product statistics values:', JSON.stringify(unique[0].statistics));
-        }
+        console.log('[GET_PRODUCTS] total:', total, 'fetched:', unique.length);
         sendResponse({ success: true, data: unique });
       } catch (e) {
         sendResponse({ success: false, error: e.message });
@@ -316,21 +355,63 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
       async function getStoredApiKey() {
         const raw = await chrome.storage.local.get(['geminiApiKey', 'optimizerSettings']);
-        return raw.geminiApiKey || raw.optimizerSettings?.geminiApiKey || '';
+        return raw.geminiApiKey || raw.optimizerSettings?.geminiApiKey || raw.optimizerSettings?.geminiKey || '';
       }
 
       async function getShopProducts(targetShopId, targetRegion) {
+        // 이미 상품이 전달되었으면 그대로 사용
         if (Array.isArray(msg.products) && msg.products.length > 0) {
           return msg.products;
         }
-        const spcData = await findSpcCds();
+
+        // 직접 API에서 전체 페이지 수집
+        var spcData = await findSpcCds();
         if (!spcData) throw new Error('Not logged in');
 
-        const domain = msg.sellerDomain || spcData.domain;
-        const url = `https://${domain}/api/v3/opt/mpsku/list/v2/search_product_list?page_number=1&page_size=48&source=seller_center&need_statistic_info=true&SPC_CDS=${encodeURIComponent(spcData.spc)}&SPC_CDS_VER=2&cnsc_shop_id=${targetShopId}&cbsc_shop_region=${targetRegion}`;
-        const res = await fetch(url, { credentials: 'include' });
-        const data = await res.json();
-        return data?.data?.products || [];
+        var domain = msg.sellerDomain || spcData.domain;
+        var PAGE_SIZE = 48;
+        var baseParams = 'source=seller_center&need_statistic_info=true'
+          + '&SPC_CDS=' + encodeURIComponent(spcData.spc)
+          + '&SPC_CDS_VER=2'
+          + '&cnsc_shop_id=' + targetShopId
+          + '&cbsc_shop_region=' + targetRegion;
+
+        // 첫 페이지
+        var firstUrl = 'https://' + domain
+          + '/api/v3/opt/mpsku/list/v2/search_product_list?page_number=1&page_size=' + PAGE_SIZE
+          + '&' + baseParams;
+        var firstRes = await fetch(firstUrl, { credentials: 'include' });
+        var firstData = await firstRes.json();
+        var allProducts = firstData.data?.products || [];
+        var total = firstData.data?.page_info?.total || allProducts.length;
+        var totalPages = Math.min(Math.ceil(total / PAGE_SIZE), 120);
+
+        // 나머지 페이지 수집
+        for (var p = 2; p <= totalPages; p++) {
+          try {
+            var pageUrl = 'https://' + domain
+              + '/api/v3/opt/mpsku/list/v2/search_product_list?page_number=' + p
+              + '&page_size=' + PAGE_SIZE + '&' + baseParams;
+            var pageRes = await fetch(pageUrl, { credentials: 'include' });
+            var pageData = await pageRes.json();
+            var pageProducts = pageData.data?.products || [];
+            if (pageProducts.length === 0) break;
+            allProducts = allProducts.concat(pageProducts);
+          } catch (e) {
+            console.warn('[AI getShopProducts] page', p, 'failed:', e.message);
+          }
+          await new Promise(function(r) { setTimeout(r, 200); });
+        }
+
+        // 중복 제거
+        var seen = {};
+        var unique = allProducts.filter(function(prod) {
+          if (seen[prod.id]) return false;
+          seen[prod.id] = true;
+          return true;
+        });
+        console.log('[AI getShopProducts] total:', total, 'fetched:', unique.length);
+        return unique;
       }
 
       try {
@@ -342,7 +423,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           return;
         }
 
-        const gemini = new GeminiOptimizer(apiKey);
+        const settings = await new Promise(function (r) {
+          chrome.storage.local.get('optimizerSettings', function (res) { r(res.optimizerSettings || {}); });
+        });
+        const geminiModel = settings.geminiModel || 'gemini-2.0-flash';
+        const gemini = new GeminiOptimizer(apiKey, geminiModel);
 
         sendProgress('상품 목록 가져오는 중...', 5);
         let products = [];

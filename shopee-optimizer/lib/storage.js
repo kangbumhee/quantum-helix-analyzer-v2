@@ -18,13 +18,13 @@ const StorageHelper = {
     const history = await this.get(historyKey) || [];
     history.push({
       date: new Date().toISOString(),
-      score: report.score,
-      totalProducts: report.summary.totalProducts,
-      totalViews: report.summary.totalViews,
-      totalSold: report.summary.totalSold,
-      localizationRate: report.titleAudit.localizationRate,
-      keywordMatchRate: report.keywordAudit.matchRate,
-      issueCount: report.issues.length
+      score: report.score || 0,
+      totalProducts: report.summary?.totalProducts || 0,
+      totalViews: report.summary?.totalViews || 0,
+      totalSold: report.summary?.totalSold || 0,
+      localizationRate: report.titleAudit?.localizationRate || 0,
+      keywordMatchRate: report.keywordAudit?.matchRate || 0,
+      issueCount: report.issues?.length || 0
     });
 
     // 30일 초과분 제거
@@ -56,11 +56,15 @@ const StorageHelper = {
 
   // ── 설정 저장/로드 ──
   async saveSettings(settings) {
-    await chrome.storage.local.set({ optimizer_settings: settings });
+    await chrome.storage.local.set({
+      optimizer_settings: settings,
+      optimizerSettings: settings
+    });
   },
 
   async loadSettings() {
-    return (await this.get('optimizer_settings')) || {
+    const result = await chrome.storage.local.get(['optimizer_settings', 'optimizerSettings']);
+    return result.optimizer_settings || result.optimizerSettings || {
       autoAnalyzeInterval: 24, // hours
       freshnessRotationEnabled: false,
       productsPerDay: 7,

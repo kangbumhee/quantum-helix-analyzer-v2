@@ -448,50 +448,80 @@ function renderFreshness() {
 
 // ── 상품 목록 ──
 function renderProducts() {
-  const reports = getActiveReports();
-  const allProducts = [];
+  var reports = getActiveReports();
+  var allProducts = [];
 
-  reports.forEach(r => {
-    (r.products || []).forEach(p => {
-      allProducts.push({ ...p, shop: r.region });
+  reports.forEach(function(r) {
+    (r.products || []).forEach(function(p) {
+      allProducts.push(Object.assign({}, p, { shop: r.region }));
     });
   });
 
-  const sortBy = document.getElementById('productSort').value;
-  const sortFn = {
-    sold: (a, b) => (b.sold || 0) - (a.sold || 0),
-    views: (a, b) => (b.views || 0) - (a.views || 0),
-    impression: (a, b) => (b.l30d_impression || 0) - (a.l30d_impression || 0),
-    modify: (a, b) => (a.daysSinceModify || 999) - (b.daysSinceModify || 999),
-    keyword: (a, b) => (b.matchedKeywords?.length || 0) - (a.matchedKeywords?.length || 0)
+  // productSort가 이미 DOM에 있으면 그 값 사용, 없으면 기본값
+  var sortEl = document.getElementById('productSort');
+  var sortBy = sortEl ? sortEl.value : 'sold';
+
+  var sortFn = {
+    sold: function(a, b) { return (b.sold || 0) - (a.sold || 0); },
+    views: function(a, b) { return (b.views || 0) - (a.views || 0); },
+    impression: function(a, b) { return (b.l30d_impression || 0) - (a.l30d_impression || 0); },
+    modify: function(a, b) { return (a.daysSinceModify || 999) - (b.daysSinceModify || 999); },
+    keyword: function(a, b) { return (b.matchedKeywords ? b.matchedKeywords.length : 0) - (a.matchedKeywords ? a.matchedKeywords.length : 0); }
   };
 
   allProducts.sort(sortFn[sortBy] || sortFn.sold);
 
-  document.getElementById('productList').innerHTML = `
-    <div class="product-row header">
-      <div>상품명</div>
-      <div class="text-right">조회</div>
-      <div class="text-right">판매</div>
-      <div class="text-right">노출</div>
-      <div class="text-right">전환</div>
-      <div class="text-right">키워드</div>
-    </div>
-    ${allProducts.map(p => {
-      const kwCount = p.matchedKeywords?.length || 0;
-      const kwClass = kwCount > 0 ? 'score-good' : 'score-bad';
-      return `
-        <div class="product-row">
-          <div class="product-name">[${p.shop}] ${(p.name || '').substring(0, 45)}</div>
-          <div class="text-right">${p.views || 0}</div>
-          <div class="text-right">${p.sold || 0}</div>
-          <div class="text-right">${p.l30d_impression || 0}</div>
-          <div class="text-right">${p.l30d_conversion || 0}%</div>
-          <div class="text-right ${kwClass}">${kwCount}/${(p.suggestedKeywords?.length || 0)}</div>
-        </div>
-      `;
-    }).join('')}
-  `;
+  // 출력 컨테이너: productListContent (HTML에 실제 존재) 우선, 없으면 productList
+  var container = document.getElementById('productListContent') || document.getElementById('productList');
+  if (!container) return;
+
+  var html = '';
+
+  // 정렬 드롭다운 (매번 동적으로 렌더링)
+  html += '<div class="sort-bar" style="margin-bottom:16px;">';
+  html += '  <select id="productSort" style="padding:8px 12px;border:1px solid #3a3a5a;border-radius:6px;font-size:13px;background:#1a1a2e;color:#e0e0e0;">';
+  html += '    <option value="sold"' + (sortBy === 'sold' ? ' selected' : '') + '>판매순</option>';
+  html += '    <option value="views"' + (sortBy === 'views' ? ' selected' : '') + '>조회순</option>';
+  html += '    <option value="impression"' + (sortBy === 'impression' ? ' selected' : '') + '>노출순</option>';
+  html += '    <option value="modify"' + (sortBy === 'modify' ? ' selected' : '') + '>최근수정순</option>';
+  html += '    <option value="keyword"' + (sortBy === 'keyword' ? ' selected' : '') + '>키워드순</option>';
+  html += '  </select>';
+  html += '</div>';
+
+  // 헤더
+  html += '<div class="product-row header">';
+  html += '  <div>상품명</div>';
+  html += '  <div class="text-right">조회</div>';
+  html += '  <div class="text-right">판매</div>';
+  html += '  <div class="text-right">노출</div>';
+  html += '  <div class="text-right">전환</div>';
+  html += '  <div class="text-right">키워드</div>';
+  html += '</div>';
+
+  // 상품 행
+  allProducts.forEach(function(p) {
+    var kwCount = p.matchedKeywords ? p.matchedKeywords.length : 0;
+    var sugCount = p.suggestedKeywords ? p.suggestedKeywords.length : 0;
+    var kwClass = kwCount > 0 ? 'score-good' : 'score-bad';
+    html += '<div class="product-row">';
+    html += '  <div class="product-name">[' + (p.shop || '') + '] ' + (p.name || '').substring(0, 45) + '</div>';
+    html += '  <div class="text-right">' + (p.views || 0) + '</div>';
+    html += '  <div class="text-right">' + (p.sold || 0) + '</div>';
+    html += '  <div class="text-right">' + (p.l30d_impression || 0) + '</div>';
+    html += '  <div class="text-right">' + (p.l30d_conversion || 0) + '%</div>';
+    html += '  <div class="text-right ' + kwClass + '">' + kwCount + '/' + sugCount + '</div>';
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+
+  // 정렬 드롭다운에 change 이벤트 바인딩 (동적으로 생성했으므로)
+  var newSortEl = document.getElementById('productSort');
+  if (newSortEl) {
+    newSortEl.addEventListener('change', function() {
+      renderProducts();
+    });
+  }
 }
 
 function switchTab(tabName) {

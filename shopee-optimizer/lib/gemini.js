@@ -2,9 +2,10 @@
 // 하드코딩 카테고리 매핑 완전 제거, AI가 모든 카테고리를 자동 처리
 
 class GeminiOptimizer {
-  constructor(apiKey) {
+  constructor(apiKey, model) {
     this.apiKey = apiKey;
-    this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+    this.model = model || 'gemini-2.0-flash';
+    this.baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`;
     this.maxRetries = 2;
     this.retryDelays = [15000, 30000];
   }

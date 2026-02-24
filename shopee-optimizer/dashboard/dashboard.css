@@ -2,8 +2,8 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f0f2f5;
-  color: #333;
+  background: #0f0f23;
+  color: #e0e0e0;
 }
 
 .app {
@@ -90,6 +90,8 @@ body {
   flex: 1;
   margin-left: 220px;
   padding: 30px;
+  background: #0f0f23;
+  min-height: 100vh;
 }
 
 .tab-content { display: none; }
@@ -98,17 +100,17 @@ body {
 h1 {
   font-size: 24px;
   margin-bottom: 20px;
-  color: #1a1a2e;
+  color: #ffffff;
 }
 
 h2 {
   font-size: 16px;
   margin-bottom: 12px;
-  color: #444;
+  color: #c0c0d0;
 }
 
 .tab-desc {
-  color: #666;
+  color: #a0a0c0;
   margin-bottom: 20px;
   font-size: 14px;
 }
@@ -122,15 +124,16 @@ h2 {
 }
 
 .metric-card {
-  background: #fff;
+  background: #1a1a2e;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  border: 1px solid #2a2a4a;
 }
 
 .metric-label {
   font-size: 12px;
-  color: #888;
+  color: #8888aa;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -139,11 +142,12 @@ h2 {
   font-size: 28px;
   font-weight: 700;
   margin-top: 4px;
+  color: #ffffff;
 }
 
 .metric-sub {
   font-size: 12px;
-  color: #888;
+  color: #8888aa;
   margin-top: 2px;
 }
 
@@ -155,10 +159,11 @@ h2 {
 }
 
 .card {
-  background: #fff;
+  background: #1a1a2e;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  border: 1px solid #2a2a4a;
 }
 
 .card-header {
@@ -171,6 +176,7 @@ h2 {
 .card-title {
   font-size: 16px;
   font-weight: 700;
+  color: #e8e8f0;
 }
 
 .card-score {
@@ -189,19 +195,19 @@ h2 {
   display: flex;
   justify-content: space-between;
   padding: 4px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #2a2a4a;
 }
 
-.stat-label { color: #888; }
-.stat-value { font-weight: 600; }
+.stat-label { color: #8888aa; }
+.stat-value { font-weight: 600; color: #e0e0e0; }
 
 /* Issues */
 .issue-card {
-  background: #fff;
+  background: #1a1a2e;
   border-radius: 10px;
   padding: 16px 20px;
   margin-bottom: 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
   border-left: 4px solid;
 }
 
@@ -213,11 +219,12 @@ h2 {
   font-weight: 700;
   font-size: 14px;
   margin-bottom: 4px;
+  color: #ffffff;
 }
 
-.issue-desc { font-size: 13px; color: #555; margin-bottom: 8px; }
-.issue-impact { font-size: 12px; color: #888; margin-bottom: 4px; }
-.issue-action { font-size: 12px; color: #ee4d2d; font-weight: 600; }
+.issue-desc { font-size: 13px; color: #c0c0d0; margin-bottom: 8px; }
+.issue-impact { font-size: 12px; color: #ff8a8a; margin-bottom: 4px; }
+.issue-action { font-size: 12px; color: #00d4aa; font-weight: 600; }
 
 .severity-badge {
   display: inline-block;
@@ -244,11 +251,12 @@ h2 {
   display: flex;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #fff;
+  background: #1a1a2e;
   border-radius: 6px;
   margin-bottom: 4px;
   font-size: 13px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  border: 1px solid #2a2a4a;
 }
 
 .kw-name { font-weight: 600; }
@@ -257,16 +265,17 @@ h2 {
 
 /* Title suggestions */
 .title-card {
-  background: #fff;
+  background: #1a1a2e;
   border-radius: 10px;
   padding: 16px 20px;
   margin-bottom: 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  border: 1px solid #2a2a4a;
 }
 
 .title-current {
   font-size: 13px;
-  color: #888;
+  color: #9999aa;
   margin-bottom: 8px;
   word-break: break-all;
 }
@@ -274,7 +283,7 @@ h2 {
 .title-suggested {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: #00f5c8;
   margin-bottom: 8px;
   word-break: break-all;
 }
@@ -314,11 +323,12 @@ h2 {
 }
 
 .fresh-card {
-  background: #fff;
+  background: #1a1a2e;
   padding: 20px;
   border-radius: 12px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  border: 1px solid #2a2a4a;
 }
 
 .fresh-number {
@@ -326,7 +336,7 @@ h2 {
   font-weight: 800;
 }
 
-.fresh-label { font-size: 12px; color: #888; margin-top: 4px; }
+.fresh-label { font-size: 12px; color: #8888aa; margin-top: 4px; }
 .fresh-boosted .fresh-number { color: #22c55e; }
 .fresh-pending .fresh-number { color: #f59e0b; }
 .fresh-expired .fresh-number { color: #ef4444; }
@@ -338,9 +348,11 @@ h2 {
 
 .sort-bar select {
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid #3a3a5a;
   border-radius: 6px;
   font-size: 13px;
+  background: #1a1a2e;
+  color: #e0e0e0;
 }
 
 .product-row {
@@ -348,12 +360,13 @@ h2 {
   grid-template-columns: 2fr 80px 80px 80px 80px 100px;
   gap: 8px;
   padding: 10px 14px;
-  background: #fff;
+  background: #1a1a2e;
   border-radius: 6px;
   margin-bottom: 4px;
   font-size: 13px;
   align-items: center;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  color: #d0d0e0;
 }
 
 .product-row.header {
@@ -368,6 +381,7 @@ h2 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #e8e8f0;
 }
 
 .text-right { text-align: right; }

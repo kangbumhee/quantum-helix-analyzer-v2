@@ -75,10 +75,34 @@ const ShopeeAPI = {
     }
     const result = await this.getSPC();
     if (!result) throw new Error('SPC_CDS 쿠키 없음');
-    const url = `https://${result.domain}/api/v3/general/get_shop_list?SPC_CDS=${result.spc}&SPC_CDS_VER=2`;
-    const res = await fetch(url, { credentials: 'include' });
-    const data = await res.json();
-    return (data.data?.shop_list || []).filter(s => s.status === 1);
+
+    const endpoints = [
+      '/api/v3/merchant/get_shop_list',
+      '/api/v3/general/get_shop_list'
+    ];
+
+    for (const ep of endpoints) {
+      try {
+        const url = `https://${result.domain}${ep}?SPC_CDS=${result.spc}&SPC_CDS_VER=2`;
+        const res = await fetch(url, { credentials: 'include' });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const rawList = data.data?.list || data.data?.shop_list || [];
+        if (rawList.length > 0) {
+          return rawList.map(s => ({
+            shop_id: String(s.shop_id || s.id || ''),
+            name: s.user_name || s.shop_name || s.name || '',
+            shop_name: s.user_name || s.shop_name || s.name || '',
+            region: (s.region || s.cb_region || 'sg').toLowerCase(),
+            status: s.shop_status || s.status || 1
+          }));
+        }
+      } catch (e) {
+        // try next
+      }
+    }
+
+    return [];
   },
 
   // ══════════════════════════════════════
