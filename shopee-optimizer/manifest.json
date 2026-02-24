@@ -1,24 +1,32 @@
 {
   "manifest_version": 3,
-  "name": "Shopee Shop Analyzer & Optimizer",
-  "version": "1.0.0",
-  "description": "Shopee 셀러센터 샵 자동 분석, 키워드 미스매칭 감지, 제목/설명 최적화 제안, Freshness Boost 모니터링",
-  "permissions": ["storage", "cookies", "alarms", "tabs", "scripting"],
+  "name": "Shopee Optimizer",
+  "version": "2.0.0",
+  "description": "쇼피 셀러 분석 & AI 최적화 크롬 익스텐션",
+  "permissions": [
+    "storage",
+    "cookies",
+    "alarms",
+    "tabs"
+  ],
   "host_permissions": [
-    "https://seller.shopee.kr/*",
-    "https://seller.shopee.sg/*",
-    "https://seller.shopee.vn/*",
-    "https://seller.shopee.co.th/*",
-    "https://seller.shopee.tw/*",
-    "https://seller.shopee.com.br/*",
-    "https://seller.shopee.com.mx/*",
-    "https://seller.shopee.co.id/*",
-    "https://seller.shopee.com.my/*",
-    "https://seller.shopee.ph/*",
+    "https://*.shopee.kr/*",
+    "https://*.shopee.co.id/*",
+    "https://*.shopee.com.my/*",
+    "https://*.shopee.sg/*",
+    "https://*.shopee.co.th/*",
+    "https://*.shopee.vn/*",
+    "https://*.shopee.ph/*",
+    "https://*.shopee.tw/*",
+    "https://*.shopee.com.br/*",
+    "https://*.shopee.com.mx/*",
+    "https://*.shopee.com.co/*",
+    "https://*.shopee.cl/*","https://seller.shopee.com.co/*","https://seller.shopee.cl/*",
     "https://generativelanguage.googleapis.com/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "popup/popup.html",
@@ -33,8 +41,5 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "options_ui": {
-    "page": "options/options.html",
-    "open_in_tab": true
-  }
+  "options_page": "options/options.html"
 }
