@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopee Optimizer — Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <div class="app">
+    <!-- 사이드바 -->
+    <nav class="sidebar">
+      <div class="logo">🛍️ Shopee<br>Optimizer</div>
+      <ul class="nav-list" id="navList">
+        <li class="nav-item active" data-tab="overview">📊 전체 개요</li>
+        <li class="nav-item" data-tab="issues">⚠️ 문제점</li>
+        <li class="nav-item" data-tab="keyword-analysis">🔑 키워드 분석</li>
+        <li class="nav-item" data-tab="title-optimization">✏️ 제목 최적화</li>
+        <li class="nav-item" data-tab="freshness">🔄 Freshness</li>
+        <li class="nav-item" data-tab="product-list">📦 상품 목록</li>
+        <li class="nav-item" data-tab="ai-optimize">🤖 AI 최적화</li>
+        <li class="nav-item" data-tab="apply-changes">✅ 수정 적용</li>
+        <li class="nav-item" data-tab="history">📋 수정 이력</li>
+      </ul>
+      <div class="sidebar-footer">
+        <select id="shopSelector" class="shop-select">
+          <option value="all">전체 샵</option>
+        </select>
+        <button id="btnRefresh" class="btn-refresh">🔄 새로고침</button>
+        <button id="btnConnectCookie" class="btn-refresh btn-cookie">🍪 쿠키 연결</button>
+      </div>
+    </nav>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="main">
+      <!-- 전체 개요 -->
+      <div id="tab-overview" class="tab-content active">
+        <h1>전체 개요</h1>
+        <div class="metrics-grid" id="overviewMetrics"></div>
+        <div class="cards-grid" id="shopCards"></div>
+      </div>
+
+      <!-- 문제점 -->
+      <div id="tab-issues" class="tab-content">
+        <h1>문제점 분석</h1>
+        <div id="issuesList"></div>
+      </div>
+
+      <!-- 키워드 분석 -->
+      <div id="tab-keyword-analysis" class="tab-content">
+        <h1>키워드 분석</h1>
+        <div class="two-col">
+          <div>
+            <h2>🔥 인기 키워드</h2>
+            <div id="popularKeywords"></div>
+          </div>
+          <div>
+            <h2>📈 트렌딩 키워드</h2>
+            <div id="trendingKeywords"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 제목 최적화 -->
+      <div id="tab-title-optimization" class="tab-content" style="display:none;">
+        <div class="page-header">
+          <h2>✏️ 제목 최적화 제안</h2>
+          <p class="page-desc">인기 키워드가 누락된 상품의 제목 개선안입니다. 우선순위가 높은 항목부터 수정하세요.</p>
+        </div>
+
+        <div class="control-bar" style="margin-bottom:20px;">
+          <select id="titleOptShopSelect" class="select-control"></select>
+          <button id="btnRefreshTitleOpt" class="btn-refresh">🔄 새로고침</button>
+        </div>
+
+        <div id="titleOptResults"></div>
+      </div>
+
+      <!-- Freshness -->
+      <div id="tab-freshness" class="tab-content">
+        <h1>Freshness Boost 모니터링</h1>
+        <div style="margin-bottom:16px;">
+          <select id="freshnessShopFilter" class="select-control">
+            <option value="all">전체 샵</option>
+          </select>
+        </div>
+        <div class="freshness-summary" id="freshnessSummary"></div>
+        <div id="freshnessProducts"></div>
+      </div>
+
+      <!-- 상품 목록 -->
+      <div id="tab-product-list" class="tab-content">
+        <h1>상품 목록</h1>
+        <div id="productListContent"></div>
+      </div>
+
+      <!-- AI 최적화 탭 -->
+      <div id="tab-ai-optimize" class="tab-content" style="display:none;">
+        <div class="ai-controls">
+          <select id="aiShopSelect" class="shop-select">
+            <option value="">샵 선택...</option>
+          </select>
+
+          <button id="btnAIAnalyze" class="btn-ai-action btn-primary">
+            ✨ AI 분석 시작
+          </button>
+          <button id="btnRunAllShops" class="btn-ai-action btn-secondary">
+            🌐 전체 샵 일괄 분석
+          </button>
+        </div>
+
+        <div id="aiProgress" class="progress-section" style="display:none;">
+          <div class="progress-bar-container">
+            <div class="progress-bar">
+              <div id="aiProgressBar" class="progress-fill"></div>
+            </div>
+            <span id="aiProgressPct" class="progress-pct">0%</span>
+          </div>
+          <p id="aiProgressText" class="progress-text">준비 중...</p>
+          <p id="aiProgressDetail" class="progress-detail"></p>
+        </div>
+
+        <div id="aiResultsContainer"></div>
+      </div>
+
+      <!-- 수정 적용 결과 탭 -->
+      <div id="tab-apply-changes" class="tab-content">
+        <div class="page-header">
+          <h2>✅ 수정 적용 결과</h2>
+        </div>
+        <div id="applyResults"></div>
+      </div>
+
+      <!-- 수정 이력 탭 -->
+      <div id="tab-history" class="tab-content">
+        <div class="page-header">
+          <h2>📋 수정 이력</h2>
+          <button id="btnClearHistory" class="btn-refresh">이력 삭제</button>
+        </div>
+        <div id="historyList"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

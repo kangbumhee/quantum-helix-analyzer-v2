@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Shopee Shop Analyzer & Optimizer",
+  "version": "1.0.0",
+  "description": "Shopee 셀러센터 샵 자동 분석, 키워드 미스매칭 감지, 제목/설명 최적화 제안, Freshness Boost 모니터링",
+  "permissions": ["storage", "cookies", "alarms", "tabs", "scripting"],
+  "host_permissions": [
+    "https://seller.shopee.kr/*",
+    "https://seller.shopee.sg/*",
+    "https://seller.shopee.vn/*",
+    "https://seller.shopee.co.th/*",
+    "https://seller.shopee.tw/*",
+    "https://seller.shopee.com.br/*",
+    "https://seller.shopee.com.mx/*",
+    "https://seller.shopee.co.id/*",
+    "https://seller.shopee.com.my/*",
+    "https://seller.shopee.ph/*",
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  }
+}
